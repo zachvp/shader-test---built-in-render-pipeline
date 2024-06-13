@@ -4,6 +4,7 @@ Shader "Custom/Toon Shader"
     {
         _Color("Color", Color) = (1, 1, 1, 1)
         _MainTex("Main Texture", 2D) = "white" {}
+        [HDR] _AmbientColor("Ambient Color", Color) = (0.4, 0.4, 0.4, 1)
     }
 
     SubShader
@@ -21,6 +22,7 @@ Shader "Custom/Toon Shader"
             #pragma fragment frag
 
             #include "UnityCG.cginc"
+            #include "Lighting.cginc"
 
             struct appdata
             {
@@ -52,14 +54,17 @@ Shader "Custom/Toon Shader"
 
             // frag program properties
             float4 _Color;
+            float4 _AmbientColor;
 
             fixed4 frag (v2f i) : SV_Target
             {
                 float4 sample = tex2D(_MainTex, i.uv);
                 float3 normal = normalize(i.worldNormal);
                 float NdotL = dot(_WorldSpaceLightPos0, normal);
+                float lightIntensity = step(0, NdotL);
+                float4 light = lightIntensity * _LightColor0;
 
-                return _Color * sample * NdotL;
+                return _Color * sample * (_AmbientColor + light);
             }
             ENDCG
         }
