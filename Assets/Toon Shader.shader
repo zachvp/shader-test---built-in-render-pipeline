@@ -9,6 +9,9 @@ Shader "Custom/Toon Shader"
         _Glossiness("Glossiness", Float) = 32
         [HDR] _RimColor("Rim Color", Color) = (1, 1, 1, 1)
         _RimAmount("Rim Amount", Range(0, 1)) = 0.716
+        _LightStepOffset("Light Step Offset", Range(0, 2)) = 0.02
+        _SpecularStepOffset("Specular Step Offset", Range(0, 2)) = 0.02
+        _RimStepOffset("Rim Step Offset", Range(0, 2)) = 0.02
     }
 
     SubShader
@@ -65,6 +68,9 @@ Shader "Custom/Toon Shader"
             float _Glossiness;
             float4 _RimColor;
             float _RimAmount;
+            float _LightStepOffset;
+            float _SpecularStepOffset;
+            float _RimStepOffset;
 
             fixed4 frag (v2f i) : SV_Target
             {
@@ -75,14 +81,15 @@ Shader "Custom/Toon Shader"
                 float NdotL = dot(_WorldSpaceLightPos0, normal);
                 float NdotH = dot(normal, halfVector);
 
-                float lightIntensity = smoothstep(0, 0.02, NdotL);
+                float lightIntensity = smoothstep(0, _LightStepOffset, NdotL);
                 float4 light = lightIntensity * _LightColor0;
                 float specularIntensity = pow(NdotH * lightIntensity, _Glossiness * _Glossiness);
-                float specularIntensitySmooth = smoothstep(0.005, 0.02, specularIntensity);
+                float specularIntensitySmooth = smoothstep(0.005, _SpecularStepOffset, specularIntensity);
                 float4 specular = specularIntensitySmooth * _SpecularColor;
                 
                 float4 rimDot = 1 - dot(viewDir, normal);
-                float rimIntensity = smoothstep(_RimAmount - 0.02, _RimAmount + 0.02, rimDot);
+                float rimIntensity = rimDot * NdotL;
+                rimIntensity = smoothstep(_RimAmount - _RimStepOffset, _RimAmount + _RimStepOffset, rimDot);
                 float4 rim = rimIntensity * _RimColor;
 
                 float4 sample = tex2D(_MainTex, i.uv);
